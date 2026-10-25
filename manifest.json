@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "dock.okuma.dev",
+  "name": "OkumarchyDock",
+  "version": "0.1.0",
+  "author": "ŌKUMA",
+  "description": "A theme-aware application dock for the Omarchy Quickshell desktop.",
+  "kinds": ["panel"],
+  "keepLoaded": true,
+  "entryPoints": {"panel": "Dock.qml"}
+}

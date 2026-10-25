@@ -1,0 +1,22 @@
+{
+  "id": "dock.okuma.dev",
+  "menuWidth": 150,
+  "pinned": [
+    {
+      "key": "files",
+      "name": "Files",
+      "desktop": "org.gnome.Nautilus",
+      "icon": "org.gnome.Nautilus",
+      "classes": ["org.gnome.nautilus", "nautilus"]
+    },
+    {
+      "key": "launcher",
+      "name": "Applications",
+      "icon": "view-app-grid-symbolic",
+      "classes": [],
+      "shellPlugin": "omarchy.menu",
+      "payload": {"initialMenu": "apps"}
+    }
+  ],
+  "runningOrder": []
+}

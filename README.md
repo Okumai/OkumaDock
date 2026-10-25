@@ -1,0 +1,128 @@
+# OkumarchyDock
+
+A compact, full-width application dock for Omarchy's Quickshell desktop.
+
+Project: https://github.com/OKUMARCHY/Dock
+
+## Features
+
+- Centered application icons on a bottom bar matching the active bar's height and font.
+- Live Omarchy theme colors and synchronized top-bar visibility.
+- Automatic discovery of the default browser, file manager, and configured editor.
+- Built-in Omarchy Applications menu; no private launcher is required.
+- Optional Disk Usage launcher when `dua` and `xdg-terminal-exec` are installed.
+- Running application grouping across workspaces, activity indicators, and window selection.
+- Left-drag sorting, persistent pins, right-click actions, and wheel overflow scrolling.
+- A 150-logical-pixel context menu by default.
+- Direct icon-file indexing to avoid Qt icon-theme lookup failures after login.
+- Window focus without permanently changing compositor cursor settings.
+
+## Compatibility
+
+This is an **Omarchy plugin**, not a standalone Arch Linux dock. It requires:
+
+- Omarchy's Quickshell-based shell with schema-version-1 plugins, keep-loaded panels,
+  the shared `qs.Commons` theme, and `PluginShellApi.updateEntryInline`.
+- Hyprland with the Lua API: `hyprctl eval`, `hl.get_config`, `hl.config`,
+  `hl.dsp.focus`, and `hl.dsp.window.close`.
+- Quickshell with QtQuick, Io, Hyprland, Wayland, and DesktopEntries support.
+- Python 3 and `xdg-utils`.
+
+The development system uses Quickshell `0.3.2.r7.g2b4501a`. Compatibility is
+API-based: no minimum Omarchy release is claimed without a broader test matrix.
+Older Waybar-based Omarchy desktops and legacy Hyprland dispatch-only releases
+are not supported. Other compositors are not supported.
+
+All project-authored code and documentation are English. Desktop-entry names
+and window titles supplied by installed applications may use any language.
+
+## Installation
+
+After this repository is published:
+
+```bash
+omarchy plugin add https://github.com/OKUMARCHY/Dock.git --enable
+```
+
+Review the source before enabling: shell plugins run unsandboxed as your user.
+Disable any other bottom dock first to avoid duplicate panels and reservations.
+
+For a local checkout, copy the repository to the standard plugin directory:
+
+```bash
+mkdir -p ~/.config/omarchy/plugins
+cp -a /path/to/OkumarchyDock ~/.config/omarchy/plugins/dock.okuma.dev
+omarchy plugin validate ~/.config/omarchy/plugins/dock.okuma.dev
+omarchy-shell shell rescanPlugins
+omarchy plugin enable dock.okuma.dev
+omarchy restart shell
+```
+
+Do not overwrite an existing installation with `cp`; use a clean target or the
+normal plugin update command. No packaged Omarchy files need modification.
+
+## Controls
+
+| Gesture | Action |
+| --- | --- |
+| Left click | Focus one window, choose among multiple windows, or launch |
+| Middle click / Shift + left click | Launch another instance |
+| Right click | Window list, launch, pin/unpin, close a single window |
+| Left drag horizontally | Reorder within the pinned or running section |
+| Mouse wheel | Scroll overflowing icons |
+| Toggle Top Bar | Hide/show both the bar and dock |
+
+Dragging across the separator does not implicitly pin or unpin an application.
+The insertion line shows the drop position. Only mapped graphical windows count
+as running applications. Tray-only processes do not appear.
+
+## Configuration
+
+Settings live in your plugin entry in `~/.config/omarchy/shell.json` (or the
+corresponding `XDG_CONFIG_HOME` directory). Preserve all other shell settings.
+See [docs/configuration.md](docs/configuration.md) and
+[examples/plugin-settings.json](examples/plugin-settings.json).
+
+Defaults are discovered at shell startup. Once you reorder or pin/unpin an app,
+the resulting `pinned` list becomes explicit and persists. Remove that setting
+and restart the shell to rediscover defaults. Changing your default applications
+does not silently replace explicitly saved pins.
+
+## Management
+
+```bash
+omarchy plugin disable dock.okuma.dev
+omarchy plugin enable dock.okuma.dev
+omarchy plugin update dock.okuma.dev
+omarchy restart shell
+omarchy-shell shell call dock.okuma.dev status ''
+```
+
+Git-managed plugin updates require installation through `omarchy plugin add`.
+See [docs/troubleshooting.md](docs/troubleshooting.md) for diagnostics.
+
+## Development
+
+```bash
+python3 -m unittest discover -s tests -v
+omarchy plugin validate .
+python3 discover-apps.py
+python3 index-icons.py
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the manual desktop test checklist.
+
+## Limitations
+
+No magnification, thumbnails, automatic hiding, or cross-section drag pinning.
+The dock is shown on every screen. Bottom reservations are released when hidden.
+Fullscreen stacking is controlled by Hyprland. Application class matching is
+heuristic and may require explicit `classes` overrides, especially for shared
+terminal classes or apps with unusual desktop IDs. Theme-based icon recoloring
+is not implemented; application artwork retains its own colors. The icon index
+prefers user icons and standard hicolor application artwork, not every possible
+icon-theme inheritance rule.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
