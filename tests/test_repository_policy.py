@@ -15,6 +15,18 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("https://github.com/Okumai/" + plugin,
                       (ROOT / "README.md").read_text(encoding="utf-8"))
 
+    def test_focus_restores_cursor_setting_before_rethrow(self):
+        source = (ROOT / "Dock.qml").read_text()
+        start = source.index('function focusWindow(')
+        end = source.index('function pin(', start)
+        focus = source[start:end]
+        self.assertIn('pcall(function()', focus)
+        self.assertLess(focus.index('no_warps=old'), focus.index('if not ok then error(err)'))
+
+    def test_removal_is_documented(self):
+        self.assertIn('omarchy plugin remove okuma.dev_dock4omarchy',
+                      (ROOT / 'README.md').read_text())
+
     def test_no_github_actions_workflows(self):
         directory = ROOT / ".github/workflows"
         workflows = [path for path in directory.rglob("*")

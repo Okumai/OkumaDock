@@ -147,7 +147,7 @@ Item {
         const address = String(w.address).replace(/^0x/, "");
         if (!/^[0-9a-f]+$/i.test(address)) return;
         // Disable compositor cursor warping only for this focus operation.
-        Quickshell.execDetached(["hyprctl", "eval", 'local old=hl.get_config("cursor.no_warps"); hl.config({cursor={no_warps=true}}); hl.dispatch(hl.dsp.focus({window="address:0x' + address + '"})); hl.config({cursor={no_warps=old}})']);
+        Quickshell.execDetached(["hyprctl", "eval", 'local old=hl.get_config("cursor.no_warps"); hl.config({cursor={no_warps=true}}); local ok,err=pcall(function() hl.dispatch(hl.dsp.focus({window="address:0x' + address + '"})) end); hl.config({cursor={no_warps=old}}); if not ok then error(err) end']);
     }
     function pin(app) {
         const next = pinned.slice();

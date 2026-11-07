@@ -109,6 +109,22 @@ omarchy-shell shell call okuma.dev_dock4omarchy status ''
 Git-managed plugin updates require installation through `omarchy plugin add`.
 See [docs/troubleshooting.md](docs/troubleshooting.md) for diagnostics.
 
+## Uninstall
+
+Back up any pins or settings you want to reuse, then run:
+
+```bash
+omarchy plugin disable okuma.dev_dock4omarchy
+omarchy plugin remove okuma.dev_dock4omarchy
+```
+
+The removal command asks for confirmation and rescans plugins. It supports both
+Git-managed installations and local copies in the standard plugin directory;
+local copies are moved to a hidden backup by Omarchy. A checkout elsewhere is
+not removed. Do not delete `shell.json`: it contains unrelated desktop settings.
+Removal is not a secure erasure of saved settings or backups. Keep Omarchy's
+built-in dock enabled; no packaged files or compositor configuration need restoring.
+
 ## Development
 
 ```bash
