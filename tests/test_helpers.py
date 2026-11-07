@@ -35,7 +35,7 @@ class DiscoveryTests(unittest.TestCase):
         with patch.object(discovery, 'read_entries', return_value={}), patch.object(discovery, 'command_output', return_value=''), patch.object(discovery.shutil, 'which', return_value=None):
             pins = discovery.discover()
         self.assertEqual([p['key'] for p in pins], ['launcher'])
-        self.assertEqual(pins[0]['shellPlugin'], 'omarchy.menu')
+        self.assertTrue(pins[0]['launcher'])
 
     def test_browser_uses_real_omarchy_default(self):
         entries = {'example-browser': {'name': 'Example Browser', 'exec': 'example-browser %U', 'icon': 'example-browser'}}

@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.Commons as Commons
+import "Launcher.js" as Launcher
 
 Item {
     id: root
@@ -84,7 +85,7 @@ Item {
         return "ok";
     }
     function status() {
-        return JSON.stringify({height: barHeight, hidden: barHidden, screens: dockWindows.instances.map(d => ({name: d.screen.name, workspace: d.workspaceId, mode: d.workspaceMode, visible: d.visible})), background: String(Commons.Color.bar.background), font: barFont, apps: apps.map(a => ({key: a.key, name: a.name, pinned: a.pinned, windows: a.windows.map(w => ({address: w.address, title: w.title, className: windowClass(w)}))}))});
+        return JSON.stringify({height: barHeight, hidden: barHidden, screens: dockWindows.instances.map(d => ({name: d.screen.name, workspace: d.workspaceId, mode: d.workspaceMode, visible: d.visible})), background: String(Commons.Color.bar.background), font: barFont, launcherPlugin: settings.launcherPlugin || "auto", apps: apps.map(a => ({key: a.key, name: a.name, pinned: a.pinned, windows: a.windows.map(w => ({address: w.address, title: w.title, className: windowClass(w)}))}))});
     }
     function windowClass(w) { return String(w.lastIpcObject.class || (w.wayland ? w.wayland.appId : "")).toLowerCase(); }
     function matches(app, w) { return (app.classes || []).indexOf(windowClass(w)) !== -1; }
@@ -133,11 +134,14 @@ Item {
         return true;
     }
     function launch(app) {
+        const launcher = Launcher.commandFor(app, root.pluginDirectory, settings.launcherPlugin);
         const now = Date.now();
-        if (now - (pendingLaunches[app.key] || 0) < 2000) return;
+        if (now - (pendingLaunches[app.key] || 0) < (launcher ? 300 : 2000)) return;
         pendingLaunches = Object.assign({}, pendingLaunches, {[app.key]: now});
+        // Resolve the live launcher on every click, including saved legacy pins.
+        if (launcher) Quickshell.execDetached(launcher);
         // Panel-scoped APIs cannot toggle unrelated plugins; use the public shell IPC.
-        if (app.shellPlugin) Quickshell.execDetached(["omarchy-shell", "shell", "toggle", app.shellPlugin, JSON.stringify(app.payload || {})]);
+        else if (app.shellPlugin) Quickshell.execDetached(["omarchy-shell", "shell", "toggle", app.shellPlugin, JSON.stringify(app.payload || {})]);
         else if (app.command && app.command.length) Quickshell.execDetached(app.command);
         else { const entry = entryFor(app.desktop); if (entry) entry.execute(); }
         launchReset.restart();
@@ -447,7 +451,7 @@ Item {
                                 const app = root.apps.find(a => a.key === dock.menuApp.key) || dock.menuApp;
                                 let rows = [{label: app.name, action: "heading"}];
                                 for (const w of app.windows) rows.push({label: (w.workspace ? "[" + w.workspace.name + "] " : "") + w.title, action: "focus", window: w});
-                                if (app.shellPlugin || app.command || app.desktop) rows.push({label: app.windows.length ? "New window / Launch" : "Launch", action: "launch"});
+                                if (app.launcher || app.shellPlugin || app.command || app.desktop) rows.push({label: app.windows.length ? "New window / Launch" : "Launch", action: "launch"});
                                 if (app.pinned || app.desktop) rows.push({label: app.pinned ? "Unpin from Dock" : "Pin to Dock", action: "pin"});
                                 if (app.windows.length === 1) rows.push({label: "Close window", action: "close", window: app.windows[0]});
                                 return rows;

@@ -6,6 +6,7 @@ entry in Omarchy's shell configuration. Back up the file before editing.
 | Setting | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `menuWidth` | number | 150 | Menu width in logical pixels, minimum 120, capped to screen |
+| `launcherPlugin` | string | `auto` | Applications target: prefer live Launchpad with menu fallback; or require `okuma.dev_launchpad4omarchy` / force `omarchy.menu` |
 | `pinned` | array | discovered | Ordered application definitions; an empty array means no pins |
 | `runningOrder` | string array | empty | Preferred order for unpinned running app keys |
 
@@ -19,13 +20,18 @@ entry in Omarchy's shell configuration. Back up the file before editing.
 - `command`: optional argv array; overrides desktop-entry execution. Do not use a shell string.
 - `shellPlugin`: optional Omarchy plugin ID to toggle instead of executing a command.
 - `payload`: optional JSON object for `shellPlugin`.
+- `launcher`: set `true` for the portable Applications button, resolved on every click.
 
 `command` and `shellPlugin` are trusted executable configuration. Never import
 settings from a source you do not trust. Use absolute paths for custom files;
 `~` and `$HOME` are not expanded inside argv arrays or icon paths.
 
-The built-in Applications pin toggles `omarchy.menu` with
-`{"initialMenu":"apps"}`. It requires that first-party menu to be enabled.
+The Applications pin toggles the responding `okuma.dev_launchpad4omarchy` plugin,
+or summons `omarchy.menu` with `{"initialMenu":"apps"}` if Launchpad is absent/disabled.
+The fallback requires that first-party menu to be enabled. Old default menu pins and
+legacy `launchpad toggle` argv pins are recognized without changing the stored config.
+A pin explicitly targeting Launchpad requires it to be loaded; failures are reported
+rather than silently opening another panel. Unrelated custom commands are preserved.
 Disk Usage uses a distinct terminal app ID to avoid grouping with normal terminals.
 
 Find window classes using `hyprctl -j clients`. Application and desktop IDs vary

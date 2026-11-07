@@ -32,6 +32,24 @@ rescan; manually replaced icon files may require a shell restart. A bundled SVG
 is displayed if an image fails to load. Report persistent failures with the app's
 desktop entry, icon name, shell logs, and relevant file paths.
 
+## Applications button does not open Launchpad
+
+Update both projects. Dock `status` must include `launcherPlugin`; otherwise the
+installed Dock predates automatic integration. Check the Launchpad plugin separately:
+
+```bash
+omarchy-shell shell call okuma.dev_launchpad4omarchy status ''
+python3 ~/.config/omarchy/plugins/okuma.dev_launchpad4omarchy/doctor.py
+```
+
+Expected status is `open` or `closed`. `unknown` means the plugin is absent, disabled,
+or failed to load, even if the IPC command exited zero. A legacy standalone Launchpad
+process is not the plugin. Install the plugin and migrate old pinch/autostart entries
+as described in Launchpad's integration guide. Do not copy another user's home paths.
+The updated Dock helper verifies Launchpad's state transition and reports IPC errors
+via stderr and, when available, a desktop notification. If `launcherPlugin` is `auto`,
+a missing plugin uses the built-in menu; select the explicit plugin ID to require it.
+
 ## Focus or close does not work
 
 Confirm the installed Hyprland exposes the required Lua dispatch APIs. This

@@ -86,7 +86,7 @@ def discover():
         aliases = ['org.omarchy.nvim', 'tui.float'] if editor == 'nvim' else []
         pins.append(make_pin(entries, 'editor', editor_id, ['omarchy', 'launch', 'editor', '.'], aliases))
     pins.append(dict(key='launcher', name='Applications', icon='view-app-grid-symbolic',
-                     classes=[], shellPlugin='omarchy.menu', payload={'initialMenu': 'apps'}))
+                     classes=[], launcher=True))
     if shutil.which('dua') and shutil.which('xdg-terminal-exec'):
         pins.append(dict(key='disk', name='Disk Usage', icon='disk-usage', classes=['org.okumarchy.dock.disk-usage'],
                          command=['xdg-terminal-exec', '--app-id=org.okumarchy.dock.disk-usage', '-e', 'dua', 'i', '/']))

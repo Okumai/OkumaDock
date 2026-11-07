@@ -1,6 +1,7 @@
 {
   "id": "okuma.dev_dock4omarchy",
   "menuWidth": 150,
+  "launcherPlugin": "auto",
   "pinned": [
     {
       "key": "files",
@@ -14,8 +15,7 @@
       "name": "Applications",
       "icon": "view-app-grid-symbolic",
       "classes": [],
-      "shellPlugin": "omarchy.menu",
-      "payload": {"initialMenu": "apps"}
+      "launcher": true
     }
   ],
   "runningOrder": []

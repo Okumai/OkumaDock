@@ -13,7 +13,7 @@ Author: ŌKUMA | Plugin ID: `okuma.dev_dock4omarchy`
 - Per-monitor visibility only on tiling (`dwindle`) and scrolling workspaces;
   floating workspaces keep Omarchy's built-in dock.
 - Automatic discovery of the default browser, file manager, and configured editor.
-- Built-in Omarchy Applications menu; no private launcher is required.
+- Applications automatically prefers an enabled OkumarchyLaunchpad plugin, with a built-in Omarchy menu fallback; no private script is required.
 - Optional Disk Usage launcher when `dua` and `xdg-terminal-exec` are installed.
 - Running application grouping across workspaces, activity indicators, and window selection.
 - Left-drag sorting, persistent pins, right-click actions, and wheel overflow scrolling.
@@ -95,6 +95,21 @@ Defaults are discovered at shell startup. Once you reorder or pin/unpin an app,
 the resulting `pinned` list becomes explicit and persists. Remove that setting
 and restart the shell to rediscover defaults. Changing your default applications
 does not silently replace explicitly saved pins.
+
+## Launchpad integration across devices
+
+Update this Dock and [OkumarchyLaunchpad](https://github.com/Okumai/Launchpad), then
+run Launchpad's `install.sh` on every device to enable it and validate native gestures.
+The Dock chooses the responding plugin at click time, so either installation order
+works. When Launchpad is missing/disabled it opens the built-in Applications menu.
+Saved default Applications pins and legacy `/home/user/.local/bin/launchpad toggle`
+pins work without copying that user's script. Other custom commands are untouched.
+
+A portable Applications pin uses `"launcher": true`. Set `launcherPlugin` to
+`auto` (default), `okuma.dev_launchpad4omarchy` (require it), or `omarchy.menu`
+(always use the built-in menu). See [configuration](docs/configuration.md).
+Dock does not read raw touchpad input: pinch registration belongs to Hyprland and
+the Launchpad installer. No additional input permissions or gesture daemon is needed.
 
 ## Management
 
