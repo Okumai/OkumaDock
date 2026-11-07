@@ -48,6 +48,9 @@ class ActivationTests(unittest.TestCase):
             self.skipTest("node is needed to execute the shared JavaScript routing tests")
         cases = [
             ({"launcher": True}, True),
+            ({"key": "apps", "shellPlugin": "omarchy.menu", "payload": {"menu": "apps"}}, True),
+            ({"key": "apps", "command": ["omarchy-shell", "omarchy.dock", "apps"]}, True),
+            ({"key": "system", "shellPlugin": "omarchy.menu", "payload": {"menu": "system"}}, False),
             ({"key": "launcher", "shellPlugin": "omarchy.menu", "payload": {"initialMenu": "apps"}}, True),
             ({"key": "launcher", "command": ["/home/other/.local/bin/launchpad", "toggle"]}, True),
             ({"key": "launchpad", "shellPlugin": launcher.LAUNCHPAD}, True),
@@ -62,6 +65,17 @@ class ActivationTests(unittest.TestCase):
                 self.assertEqual(command is not None, expected)
                 if command:
                     self.assertEqual(command[:2], ["python3", "/plugin/activate-launcher.py"])
+
+    def test_strict_preference_and_explicit_launchpad_override(self):
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("node is required")
+        script = (ROOT / "Launcher.js").read_text() + '''
+const strict = commandFor({launcher:true}, '/plugin/', 'okuma.dev_launchpad4omarchy');
+const explicit = commandFor({shellPlugin:'okuma.dev_launchpad4omarchy'}, '/plugin/', 'omarchy.menu');
+if (strict[3] !== 'okuma.dev_launchpad4omarchy' || explicit[3] !== strict[3]) process.exit(1);
+'''
+        subprocess.run([node, "-e", script], check=True)
 
 
 if __name__ == "__main__":

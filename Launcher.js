@@ -4,9 +4,13 @@ function commandFor(app, directory, preference) {
     const legacy = command.length === 2 &&
         String(command[0]).split("/").pop() === "launchpad" &&
         ["toggle", "show", "open"].indexOf(command[1]) !== -1;
-    const defaultMenu = app.shellPlugin === "omarchy.menu" &&
-        (!app.payload || app.payload.initialMenu === "apps");
-    const applications = app.launcher === true || legacy ||
+    const appsPayload = app.payload &&
+        (app.payload.initialMenu === "apps" || app.payload.menu === "apps");
+    const defaultMenu = app.shellPlugin === "omarchy.menu" && (!app.payload || appsPayload);
+    const builtInApps = command.length === 3 && command[0] === "omarchy-shell" &&
+        command[1] === "omarchy.dock" && command[2] === "apps";
+    const applications = app.launcher === true || legacy || builtInApps ||
+        (app.shellPlugin === "omarchy.menu" && appsPayload) ||
         (["launcher", "launchpad"].indexOf(app.key) !== -1 &&
          (defaultMenu || (!app.command && !app.shellPlugin)));
     const explicitLaunchpad = app.shellPlugin === "okuma.dev_launchpad4omarchy";

@@ -98,11 +98,16 @@ does not silently replace explicitly saved pins.
 
 ## Launchpad integration across devices
 
-Update this Dock and [OkumarchyLaunchpad](https://github.com/Okumai/Launchpad), then
+Update this Dock and [OkumarchyLaunchpad](https://github.com/Okumai/OkumaLaunchpad), then
 run Launchpad's `install.sh` on every device to enable it and validate native gestures.
 The Dock chooses the responding plugin at click time, so either installation order
-works. When Launchpad is missing/disabled it opens the built-in Applications menu.
-Saved default Applications pins and legacy `/home/user/.local/bin/launchpad toggle`
+works. In `auto` mode, a missing/disabled Launchpad falls back to the built-in
+Applications menu. Launchpad's full installer changes an existing `auto` preference
+to require Launchpad instead, preventing silent system-launcher fallback; explicit
+alternative preferences and unrelated custom pins remain untouched. Installing Dock
+later keeps `auto`; choose Launchpad explicitly or rerun its `setup-docks.py install`.
+Saved default Applications pins (including `menu: apps`), stock `omarchy.dock apps`
+commands and legacy `/home/user/.local/bin/launchpad toggle`
 pins work without copying that user's script. Other custom commands are untouched.
 
 A portable Applications pin uses `"launcher": true`. Set `launcherPlugin` to
@@ -138,7 +143,8 @@ Git-managed installations and local copies in the standard plugin directory;
 local copies are moved to a hidden backup by Omarchy. A checkout elsewhere is
 not removed. Do not delete `shell.json`: it contains unrelated desktop settings.
 Removal is not a secure erasure of saved settings or backups. Keep Omarchy's
-built-in dock enabled; no packaged files or compositor configuration need restoring.
+built-in dock enabled, or its managed Launchpad adapter if installed; no packaged
+files or compositor configuration need restoring.
 
 ## Development
 

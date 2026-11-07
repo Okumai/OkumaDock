@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "okuma.dev_dock4omarchy",
   "name": "OkumarchyDock",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "ŌKUMA",
   "description": "A theme-aware application dock for the Omarchy Quickshell desktop.",
   "kinds": ["panel"],
