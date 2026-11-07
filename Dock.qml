@@ -8,7 +8,7 @@ import qs.Commons as Commons
 Item {
     id: root
     property var shell: null
-    readonly property string pluginId: "dock.okuma.dev"
+    readonly property string pluginId: "okuma.dev_dock4omarchy"
     readonly property string pluginDirectory: decodeURIComponent(Qt.resolvedUrl(".").toString().replace(/^file:\/\//, ""))
     readonly property int barHeight: shell && shell.bar && shell.bar.barSize > 0 ? shell.bar.barSize : Commons.Style.bar.sizeHorizontal
     readonly property bool barHidden: shell && shell.bar ? shell.bar.barHidden : false
@@ -84,7 +84,7 @@ Item {
         return "ok";
     }
     function status() {
-        return JSON.stringify({height: barHeight, hidden: barHidden, background: String(Commons.Color.bar.background), font: barFont, apps: apps.map(a => ({key: a.key, name: a.name, pinned: a.pinned, windows: a.windows.map(w => ({address: w.address, title: w.title, className: windowClass(w)}))}))});
+        return JSON.stringify({height: barHeight, hidden: barHidden, screens: dockWindows.instances.map(d => ({name: d.screen.name, workspace: d.workspaceId, mode: d.workspaceMode, visible: d.visible})), background: String(Commons.Color.bar.background), font: barFont, apps: apps.map(a => ({key: a.key, name: a.name, pinned: a.pinned, windows: a.windows.map(w => ({address: w.address, title: w.title, className: windowClass(w)}))}))});
     }
     function windowClass(w) { return String(w.lastIpcObject.class || (w.wayland ? w.wayland.appId : "")).toLowerCase(); }
     function matches(app, w) { return (app.classes || []).indexOf(windowClass(w)) !== -1; }
@@ -163,17 +163,25 @@ Item {
     Timer { id: launchReset; interval: 2200; onTriggered: root.pendingLaunches = ({}) }
 
     Variants {
+        id: dockWindows
         model: Quickshell.screens
         PanelWindow {
             id: dock
             required property var modelData
             screen: modelData
+            readonly property var monitor: Hyprland.monitorFor(screen)
+            readonly property int workspaceId: monitor && monitor.activeWorkspace ? monitor.activeWorkspace.id : -1
+            readonly property string workspaceMode: modeObserver.mode
+            WorkspaceMode {
+                id: modeObserver
+                workspaceId: dock.workspaceId
+            }
             anchors { left: true; right: true; bottom: true }
             implicitHeight: root.barHeight
-            visible: !root.barHidden
+            visible: !root.barHidden && modeObserver.supported
             onVisibleChanged: if (!visible) { menuOpen = false; tooltipReady = false; hoverItem = null; cancelDrag(); }
             color: root.shell && root.shell.barConfig.transparent ? "transparent" : Commons.Color.bar.background
-            exclusionMode: ExclusionMode.Auto
+            exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore
             WlrLayershell.namespace: "okumarchy-dock"
             WlrLayershell.layer: WlrLayer.Top
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -207,9 +215,10 @@ Item {
             }
             readonly property int slotWidth: Math.max(root.barHeight + 10, Commons.Style.bar.iconSlot)
             function openMenu(item, app) {
+                if (!visible) return;
                 menuItem = item; menuApp = app; menuOpen = true; tooltipReady = false;
             }
-            Timer { id: tooltipDelay; interval: 450; onTriggered: dock.tooltipReady = dock.hoverItem !== null }
+            Timer { id: tooltipDelay; interval: 450; onTriggered: dock.tooltipReady = dock.visible && dock.hoverItem !== null }
             Connections {
                 target: root
                 function onMenuRequested(key) {

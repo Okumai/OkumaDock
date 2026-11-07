@@ -1,0 +1,313 @@
+[1mdiff --git i/.github/workflows/checks.yml w/.github/workflows/checks.yml[m
+[1mdeleted file mode 100644[m
+[1mindex a311c5c..0000000[m
+[1m--- i/.github/workflows/checks.yml[m
+[1m+++ /dev/null[m
+[36m@@ -1,13 +0,0 @@[m
+[31m-name: Checks[m
+[31m-on: [push, pull_request][m
+[31m-jobs:[m
+[31m-  helpers:[m
+[31m-    runs-on: ubuntu-latest[m
+[31m-    steps:[m
+[31m-      - uses: actions/checkout@v4[m
+[31m-      - uses: actions/setup-python@v5[m
+[31m-        with:[m
+[31m-          python-version: '3.12'[m
+[31m-      - run: python -m unittest discover -s tests -v[m
+[31m-      - run: python -m py_compile discover-apps.py index-icons.py[m
+[31m-      - run: python -m json.tool manifest.json > /dev/null[m
+[1mdiff --git i/CONTRIBUTING.md w/CONTRIBUTING.md[m
+[1mindex a7ce581..f8bd213 100644[m
+[1m--- i/CONTRIBUTING.md[m
+[1m+++ w/CONTRIBUTING.md[m
+[36m@@ -1,9 +1,11 @@[m
+ # Contributing[m
+ [m
+[31m-Plugin IDs follow `<plugin-name>.okuma.dev`, and manifest authors use `ŌKUMA`.[m
+[31m-This project's plugin ID is `dock.okuma.dev`. Keep runtime IDs, examples, and[m
+[31m-management commands synchronized with the manifest. The GitHub organization[m
+[31m-and repository URL remain `OKUMARCHY/Dock`.[m
+[32m+[m[32mThis project's plugin ID is `okuma.dev_dock4omarchy`, and the manifest author is `ŌKUMA`.[m
+[32m+[m[32mKeep runtime IDs, examples, and management commands synchronized with the manifest.[m
+[32m+[m[32mThe canonical repository is `https://github.com/Okumai/Dock`.[m
+[32m+[m
+[32m+[m[32mRead [docs/publication.md](docs/publication.md) before uploading code or submitting[m
+[32m+[m[32mto a marketplace. Run all checks locally; this repository has no hosted workflows.[m
+ [m
+ Keep source code, comments, documentation, issue templates, and test fixtures in[m
+ English. Do not commit personal settings, home-directory paths, or private window[m
+[36m@@ -25,6 +27,13 @@[m [mRun the unit tests and `omarchy plugin validate .` before submitting changes.[m
+ - Theme changes update bar, popup and text colors live.[m
+ - Toggle Top Bar hides both bars and releases reservations.[m
+ - Multiple monitors and different scale factors preserve logical geometry.[m
+[32m+[m[32m- Cycle tiling -> scrolling -> floating -> tiling on the same workspace: this[m
+[32m+[m[32m  dock only shows in the first two; the built-in dock remains enabled for floating.[m
+[32m+[m[32m- Floating mode closes open menus, releases focus grabs, cancels drags, and[m
+[32m+[m[32m  releases this dock's bottom reservation within one polling cycle (750 ms).[m
+[32m+[m[32m- Mixed modes on multiple monitors are handled independently; fast workspace[m
+[32m+[m[32m  switches and config reloads never apply stale mode-query results.[m
+[32m+[m[32m- Failed or missing mode queries leave the dock hidden rather than conflicting.[m
+ - Missing optional applications do not break startup.[m
+ [m
+ Document the exact tested Omarchy, Quickshell and Hyprland versions. Do not[m
+[1mdiff --git i/Dock.qml w/Dock.qml[m
+[1mindex d8b0a02..cdfb832 100644[m
+[1m--- i/Dock.qml[m
+[1m+++ w/Dock.qml[m
+[36m@@ -8,7 +8,7 @@[m [mimport qs.Commons as Commons[m
+ Item {[m
+     id: root[m
+     property var shell: null[m
+[31m-    readonly property string pluginId: "dock.okuma.dev"[m
+[32m+[m[32m    readonly property string pluginId: "okuma.dev_dock4omarchy"[m
+     readonly property string pluginDirectory: decodeURIComponent(Qt.resolvedUrl(".").toString().replace(/^file:\/\//, ""))[m
+     readonly property int barHeight: shell && shell.bar && shell.bar.barSize > 0 ? shell.bar.barSize : Commons.Style.bar.sizeHorizontal[m
+     readonly property bool barHidden: shell && shell.bar ? shell.bar.barHidden : false[m
+[36m@@ -84,7 +84,7 @@[m [mItem {[m
+         return "ok";[m
+     }[m
+     function status() {[m
+[31m-        return JSON.stringify({height: barHeight, hidden: barHidden, background: String(Commons.Color.bar.background), font: barFont, apps: apps.map(a => ({key: a.key, name: a.name, pinned: a.pinned, windows: a.windows.map(w => ({address: w.address, title: w.title, className: windowClass(w)}))}))});[m
+[32m+[m[32m        return JSON.stringify({height: barHeight, hidden: barHidden, screens: dockWindows.instances.map(d => ({name: d.screen.name, workspace: d.workspaceId, mode: d.workspaceMode, visible: d.visible})), background: String(Commons.Color.bar.background), font: barFont, apps: apps.map(a => ({key: a.key, name: a.name, pinned: a.pinned, windows: a.windows.map(w => ({address: w.address, title: w.title, className: windowClass(w)}))}))});[m
+     }[m
+     function windowClass(w) { return String(w.lastIpcObject.class || (w.wayland ? w.wayland.appId : "")).toLowerCase(); }[m
+     function matches(app, w) { return (app.classes || []).indexOf(windowClass(w)) !== -1; }[m
+[36m@@ -163,17 +163,25 @@[m [mItem {[m
+     Timer { id: launchReset; interval: 2200; onTriggered: root.pendingLaunches = ({}) }[m
+ [m
+     Variants {[m
+[32m+[m[32m        id: dockWindows[m
+         model: Quickshell.screens[m
+         PanelWindow {[m
+             id: dock[m
+             required property var modelData[m
+             screen: modelData[m
+[32m+[m[32m            readonly property var monitor: Hyprland.monitorFor(screen)[m
+[32m+[m[32m            readonly property int workspaceId: monitor && monitor.activeWorkspace ? monitor.activeWorkspace.id : -1[m
+[32m+[m[32m            readonly property string workspaceMode: modeObserver.mode[m
+[32m+[m[32m            WorkspaceMode {[m
+[32m+[m[32m                id: modeObserver[m
+[32m+[m[32m                workspaceId: dock.workspaceId[m
+[32m+[m[32m            }[m
+             anchors { left: true; right: true; bottom: true }[m
+             implicitHeight: root.barHeight[m
+[31m-            visible: !root.barHidden[m
+[32m+[m[32m            visible: !root.barHidden && modeObserver.supported[m
+             onVisibleChanged: if (!visible) { menuOpen = false; tooltipReady = false; hoverItem = null; cancelDrag(); }[m
+             color: root.shell && root.shell.barConfig.transparent ? "transparent" : Commons.Color.bar.background[m
+[31m-            exclusionMode: ExclusionMode.Auto[m
+[32m+[m[32m            exclusionMode: visible ? ExclusionMode.Auto : ExclusionMode.Ignore[m
+             WlrLayershell.namespace: "okumarchy-dock"[m
+             WlrLayershell.layer: WlrLayer.Top[m
+             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None[m
+[36m@@ -207,9 +215,10 @@[m [mItem {[m
+             }[m
+             readonly property int slotWidth: Math.max(root.barHeight + 10, Commons.Style.bar.iconSlot)[m
+             function openMenu(item, app) {[m
+[32m+[m[32m                if (!visible) return;[m
+                 menuItem = item; menuApp = app; menuOpen = true; tooltipReady = false;[m
+             }[m
+[31m-            Timer { id: tooltipDelay; interval: 450; onTriggered: dock.tooltipReady = dock.hoverItem !== null }[m
+[32m+[m[32m            Timer { id: tooltipDelay; interval: 450; onTriggered: dock.tooltipReady = dock.visible && dock.hoverItem !== null }[m
+             Connections {[m
+                 target: root[m
+                 function onMenuRequested(key) {[m
+[1mdiff --git i/README.md w/README.md[m
+[1mindex 2026b4e..0cd9ffc 100644[m
+[1m--- i/README.md[m
+[1m+++ w/README.md[m
+[36m@@ -2,12 +2,16 @@[m
+ [m
+ A compact, full-width application dock for Omarchy's Quickshell desktop.[m
+ [m
+[31m-Project: https://github.com/OKUMARCHY/Dock[m
+[32m+[m[32mProject: https://github.com/Okumai/Dock[m
+[32m+[m
+[32m+[m[32mAuthor: ŌKUMA | Plugin ID: `okuma.dev_dock4omarchy`[m
+ [m
+ ## Features[m
+ [m
+ - Centered application icons on a bottom bar matching the active bar's height and font.[m
+ - Live Omarchy theme colors and synchronized top-bar visibility.[m
+[32m+[m[32m- Per-monitor visibility only on tiling (`dwindle`) and scrolling workspaces;[m
+[32m+[m[32m  floating workspaces keep Omarchy's built-in dock.[m
+ - Automatic discovery of the default browser, file manager, and configured editor.[m
+ - Built-in Omarchy Applications menu; no private launcher is required.[m
+ - Optional Disk Usage launcher when `dua` and `xdg-terminal-exec` are installed.[m
+[36m@@ -27,6 +31,8 @@[m [mThis is an **Omarchy plugin**, not a standalone Arch Linux dock. It requires:[m
+   `hl.dsp.focus`, and `hl.dsp.window.close`.[m
+ - Quickshell with QtQuick, Io, Hyprland, Wayland, and DesktopEntries support.[m
+ - Python 3 and `xdg-utils`.[m
+[32m+[m[32m- Omarchy's `omarchy-hyprland-workspace-layout-current` command for reliable[m
+[32m+[m[32m  tiling, scrolling, and floating mode detection.[m
+ [m
+ The development system uses Quickshell `0.3.2.r7.g2b4501a`. Compatibility is[m
+ API-based: no minimum Omarchy release is claimed without a broader test matrix.[m
+[36m@@ -41,20 +47,22 @@[m [mand window titles supplied by installed applications may use any language.[m
+ After this repository is published:[m
+ [m
+ ```bash[m
+[31m-omarchy plugin add https://github.com/OKUMARCHY/Dock.git --enable[m
+[32m+[m[32momarchy plugin add https://github.com/Okumai/Dock.git --enable[m
+ ```[m
+ [m
+ Review the source before enabling: shell plugins run unsandboxed as your user.[m
+[31m-Disable any other bottom dock first to avoid duplicate panels and reservations.[m
+[32m+[m[32mKeep Omarchy's built-in dock enabled: it handles floating workspaces, while this[m
+[32m+[m[32mplugin handles tiling and scrolling. Disable other third-party bottom docks to[m
+[32m+[m[32mavoid duplicate panels and reservations.[m
+ [m
+ For a local checkout, copy the repository to the standard plugin directory:[m
+ [m
+ ```bash[m
+ mkdir -p ~/.config/omarchy/plugins[m
+[31m-cp -a /path/to/OkumarchyDock ~/.config/omarchy/plugins/dock.okuma.dev[m
+[31m-omarchy plugin validate ~/.config/omarchy/plugins/dock.okuma.dev[m
+[32m+[m[32mcp -a /path/to/OkumarchyDock ~/.config/omarchy/plugins/okuma.dev_dock4omarchy[m
+[32m+[m[32momarchy plugin validate ~/.config/omarchy/plugins/okuma.dev_dock4omarchy[m
+ omarchy-shell shell rescanPlugins[m
+[31m-omarchy plugin enable dock.okuma.dev[m
+[32m+[m[32momarchy plugin enable okuma.dev_dock4omarchy[m
+ omarchy restart shell[m
+ ```[m
+ [m
+[36m@@ -91,11 +99,11 @@[m [mdoes not silently replace explicitly saved pins.[m
+ ## Management[m
+ [m
+ ```bash[m
+[31m-omarchy plugin disable dock.okuma.dev[m
+[31m-omarchy plugin enable dock.okuma.dev[m
+[31m-omarchy plugin update dock.okuma.dev[m
+[32m+[m[32momarchy plugin disable okuma.dev_dock4omarchy[m
+[32m+[m[32momarchy plugin enable okuma.dev_dock4omarchy[m
+[32m+[m[32momarchy plugin update okuma.dev_dock4omarchy[m
+ omarchy restart shell[m
+[31m-omarchy-shell shell call dock.okuma.dev status ''[m
+[32m+[m[32momarchy-shell shell call okuma.dev_dock4omarchy status ''[m
+ ```[m
+ [m
+ Git-managed plugin updates require installation through `omarchy plugin add`.[m
+[36m@@ -111,11 +119,17 @@[m [mpython3 index-icons.py[m
+ ```[m
+ [m
+ See [CONTRIBUTING.md](CONTRIBUTING.md) for the manual desktop test checklist.[m
+[32m+[m[32mThis repository has no GitHub Actions workflows; tests run locally on your own device.[m
+[32m+[m[32mSee [source publication and local testing](docs/publication.md).[m
+ [m
+ ## Limitations[m
+ [m
+ No magnification, thumbnails, automatic hiding, or cross-section drag pinning.[m
+[31m-The dock is shown on every screen. Bottom reservations are released when hidden.[m
+[32m+[m[32mEach screen follows its own active workspace. The dock appears only in tiling[m
+[32m+[m[32m(`dwindle`) and scrolling modes, never in floating mode or while mode detection[m
+[32m+[m[32mis unavailable. Mode changes are checked every 750 ms and after config reloads;[m
+[32m+[m[32mthere can be a brief handover delay. Hidden docks release bottom reservations,[m
+[32m+[m[32mclose menus, and cancel drags. Named and special workspaces are not supported.[m
+ Fullscreen stacking is controlled by Hyprland. Application class matching is[m
+ heuristic and may require explicit `classes` overrides, especially for shared[m
+ terminal classes or apps with unusual desktop IDs. Theme-based icon recoloring[m
+[1mdiff --git i/docs/configuration.md w/docs/configuration.md[m
+[1mindex 76720fe..4a6378a 100644[m
+[1m--- i/docs/configuration.md[m
+[1m+++ w/docs/configuration.md[m
+[36m@@ -1,6 +1,6 @@[m
+ # Configuration[m
+ [m
+[31m-The plugin ID is `dock.okuma.dev`. Put settings inside its existing `plugins`[m
+[32m+[m[32mThe plugin ID is `okuma.dev_dock4omarchy`. Put settings inside its existing `plugins`[m
+ entry in Omarchy's shell configuration. Back up the file before editing.[m
+ [m
+ | Setting | Type | Default | Meaning |[m
+[1mdiff --git i/docs/troubleshooting.md w/docs/troubleshooting.md[m
+[1mindex 6217780..7944b47 100644[m
+[1m--- i/docs/troubleshooting.md[m
+[1m+++ w/docs/troubleshooting.md[m
+[36m@@ -4,12 +4,17 @@[m
+ [m
+ ```bash[m
+ omarchy plugin list --json[m
+[31m-omarchy plugin validate ~/.config/omarchy/plugins/dock.okuma.dev[m
+[31m-omarchy-shell shell call dock.okuma.dev status ''[m
+[32m+[m[32momarchy plugin validate ~/.config/omarchy/plugins/okuma.dev_dock4omarchy[m
+[32m+[m[32momarchy-shell shell call okuma.dev_dock4omarchy status ''[m
+ quickshell log -p /usr/share/omarchy/shell -t 100[m
+ ```[m
+ [m
+[31m-Check that the plugin is enabled and Toggle Top Bar is not hiding it. Wait a few[m
+[32m+[m[32mCheck that the plugin is enabled and Toggle Top Bar is not hiding it. This dock[m
+[32m+[m[32monly appears on tiling (`dwindle`) and scrolling workspaces; floating mode uses[m
+[32m+[m[32mOmarchy's built-in dock. The `status` response includes each screen's workspace,[m
+[32m+[m[32mdetected mode, and visibility. An empty mode means detection is pending or failed.[m
+[32m+[m[32mCheck `omarchy-hyprland-workspace-layout-current <workspace-id>` if it stays empty.[m
+[32m+[m[32mNamed and special workspaces are not supported. Wait a few[m
+ seconds after shell startup before querying IPC. Confirm this is the Quickshell[m
+ edition of Omarchy, not Waybar. Restart the shell if a keep-loaded instance is stale.[m
+ [m
+[36m@@ -19,7 +24,7 @@[m [mThe Python helper scans XDG icon directories asynchronously at startup. A brief[m
+ fallback image while it runs is normal. Check helper output and Python availability:[m
+ [m
+ ```bash[m
+[31m-python3 ~/.config/omarchy/plugins/dock.okuma.dev/index-icons.py[m
+[32m+[m[32mpython3 ~/.config/omarchy/plugins/okuma.dev_dock4omarchy/index-icons.py[m
+ ```[m
+ [m
+ Absolute custom icon files must exist. Installed application changes trigger a[m
+[36m@@ -35,14 +40,16 @@[m [mthe shell logs in bug reports. Never paste private window titles without review.[m
+ [m
+ ## Two bottom bars[m
+ [m
+[31m-Disable the previous dock, then restart the shell. This plugin does not modify[m
+[31m-or automatically disable another plugin. When migrating from a custom dock,[m
+[31m-recreate pins or copy only reviewed application definitions; private launcher[m
+[31m-commands and usernames are not portable.[m
+[32m+[m[32mKeep Omarchy's built-in dock enabled for floating mode. This plugin hides there[m
+[32m+[m[32mand releases its bottom reservation automatically (allow up to one polling cycle,[m
+[32m+[m[32m750 ms, for same-workspace mode changes). Disable other third-party bottom docks[m
+[32m+[m[32mif they duplicate the panel. This plugin does not modify system layout commands[m
+[32m+[m[32mor automatically disable another plugin. Use only reviewed application definitions;[m
+[32m+[m[32mprivate launcher commands and usernames are not portable.[m
+ [m
+ ## Reporting bugs[m
+ [m
+[31m-Report issues at https://github.com/OKUMARCHY/Dock/issues after publication.[m
+[32m+[m[32mReport issues at https://github.com/Okumai/Dock/issues after publication.[m
+ Include Omarchy, Hyprland and Quickshell versions, monitor scale, reproduction[m
+ steps, and whether restarting the shell fixes the issue. Cold login and full[m
+ machine reboot are separate tests; do not report one as proof of the other.[m
+[1mdiff --git i/examples/plugin-settings.json w/examples/plugin-settings.json[m
+[1mindex fe54abc..8340859 100644[m
+[1m--- i/examples/plugin-settings.json[m
+[1m+++ w/examples/plugin-settings.json[m
+[36m@@ -1,5 +1,5 @@[m
+ {[m
+[31m-  "id": "dock.okuma.dev",[m
+[32m+[m[32m  "id": "okuma.dev_dock4omarchy",[m
+   "menuWidth": 150,[m
+   "pinned": [[m
+     {[m
+[1mdiff --git i/manifest.json w/manifest.json[m
+[1mindex ea7938e..e6d096e 100644[m
+[1m--- i/manifest.json[m
+[1m+++ w/manifest.json[m
+[36m@@ -1,6 +1,6 @@[m
+ {[m
+   "schemaVersion": 1,[m
+[31m-  "id": "dock.okuma.dev",[m
+[32m+[m[32m  "id": "okuma.dev_dock4omarchy",[m
+   "name": "OkumarchyDock",[m
+   "version": "0.1.0",[m
+   "author": "ŌKUMA",[m
+[1mdiff --git i/tests/test_helpers.py w/tests/test_helpers.py[m
+[1mindex cedc62d..52a3937 100644[m
+[1m--- i/tests/test_helpers.py[m
+[1m+++ w/tests/test_helpers.py[m
+[36m@@ -18,7 +18,7 @@[m [mclass DiscoveryTests(unittest.TestCase):[m
+     def test_plugin_identity(self):[m
+         manifest = json.loads((ROOT / 'manifest.json').read_text())[m
+         example = json.loads((ROOT / 'examples/plugin-settings.json').read_text())[m
+[31m-        self.assertEqual(manifest['id'], 'dock.okuma.dev')[m
+[32m+[m[32m        self.assertEqual(manifest['id'], 'okuma.dev_dock4omarchy')[m
+         self.assertEqual(manifest['author'], '\u014cKUMA')[m
+         self.assertEqual(example['id'], manifest['id'])[m
+         self.assertIn('property string pluginId: "' + manifest['id'] + '"', (ROOT / 'Dock.qml').read_text())[m

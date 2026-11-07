@@ -2,12 +2,16 @@
 
 A compact, full-width application dock for Omarchy's Quickshell desktop.
 
-Project: https://github.com/OKUMARCHY/Dock
+Project: https://github.com/Okumai/Dock
+
+Author: ŌKUMA | Plugin ID: `okuma.dev_dock4omarchy`
 
 ## Features
 
 - Centered application icons on a bottom bar matching the active bar's height and font.
 - Live Omarchy theme colors and synchronized top-bar visibility.
+- Per-monitor visibility only on tiling (`dwindle`) and scrolling workspaces;
+  floating workspaces keep Omarchy's built-in dock.
 - Automatic discovery of the default browser, file manager, and configured editor.
 - Built-in Omarchy Applications menu; no private launcher is required.
 - Optional Disk Usage launcher when `dua` and `xdg-terminal-exec` are installed.
@@ -27,6 +31,8 @@ This is an **Omarchy plugin**, not a standalone Arch Linux dock. It requires:
   `hl.dsp.focus`, and `hl.dsp.window.close`.
 - Quickshell with QtQuick, Io, Hyprland, Wayland, and DesktopEntries support.
 - Python 3 and `xdg-utils`.
+- Omarchy's `omarchy-hyprland-workspace-layout-current` command for reliable
+  tiling, scrolling, and floating mode detection.
 
 The development system uses Quickshell `0.3.2.r7.g2b4501a`. Compatibility is
 API-based: no minimum Omarchy release is claimed without a broader test matrix.
@@ -41,20 +47,22 @@ and window titles supplied by installed applications may use any language.
 After this repository is published:
 
 ```bash
-omarchy plugin add https://github.com/OKUMARCHY/Dock.git --enable
+omarchy plugin add https://github.com/Okumai/Dock.git --enable
 ```
 
 Review the source before enabling: shell plugins run unsandboxed as your user.
-Disable any other bottom dock first to avoid duplicate panels and reservations.
+Keep Omarchy's built-in dock enabled: it handles floating workspaces, while this
+plugin handles tiling and scrolling. Disable other third-party bottom docks to
+avoid duplicate panels and reservations.
 
 For a local checkout, copy the repository to the standard plugin directory:
 
 ```bash
 mkdir -p ~/.config/omarchy/plugins
-cp -a /path/to/OkumarchyDock ~/.config/omarchy/plugins/dock.okuma.dev
-omarchy plugin validate ~/.config/omarchy/plugins/dock.okuma.dev
+cp -a /path/to/OkumarchyDock ~/.config/omarchy/plugins/okuma.dev_dock4omarchy
+omarchy plugin validate ~/.config/omarchy/plugins/okuma.dev_dock4omarchy
 omarchy-shell shell rescanPlugins
-omarchy plugin enable dock.okuma.dev
+omarchy plugin enable okuma.dev_dock4omarchy
 omarchy restart shell
 ```
 
@@ -91,11 +99,11 @@ does not silently replace explicitly saved pins.
 ## Management
 
 ```bash
-omarchy plugin disable dock.okuma.dev
-omarchy plugin enable dock.okuma.dev
-omarchy plugin update dock.okuma.dev
+omarchy plugin disable okuma.dev_dock4omarchy
+omarchy plugin enable okuma.dev_dock4omarchy
+omarchy plugin update okuma.dev_dock4omarchy
 omarchy restart shell
-omarchy-shell shell call dock.okuma.dev status ''
+omarchy-shell shell call okuma.dev_dock4omarchy status ''
 ```
 
 Git-managed plugin updates require installation through `omarchy plugin add`.
@@ -111,11 +119,17 @@ python3 index-icons.py
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the manual desktop test checklist.
+This repository has no GitHub Actions workflows; tests run locally on your own device.
+See [source publication and local testing](docs/publication.md).
 
 ## Limitations
 
 No magnification, thumbnails, automatic hiding, or cross-section drag pinning.
-The dock is shown on every screen. Bottom reservations are released when hidden.
+Each screen follows its own active workspace. The dock appears only in tiling
+(`dwindle`) and scrolling modes, never in floating mode or while mode detection
+is unavailable. Mode changes are checked every 750 ms and after config reloads;
+there can be a brief handover delay. Hidden docks release bottom reservations,
+close menus, and cancel drags. Named and special workspaces are not supported.
 Fullscreen stacking is controlled by Hyprland. Application class matching is
 heuristic and may require explicit `classes` overrides, especially for shared
 terminal classes or apps with unusual desktop IDs. Theme-based icon recoloring

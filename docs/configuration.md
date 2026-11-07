@@ -1,6 +1,6 @@
 # Configuration
 
-The plugin ID is `dock.okuma.dev`. Put settings inside its existing `plugins`
+The plugin ID is `okuma.dev_dock4omarchy`. Put settings inside its existing `plugins`
 entry in Omarchy's shell configuration. Back up the file before editing.
 
 | Setting | Type | Default | Meaning |

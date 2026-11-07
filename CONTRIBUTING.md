@@ -1,9 +1,11 @@
 # Contributing
 
-Plugin IDs follow `<plugin-name>.okuma.dev`, and manifest authors use `ŌKUMA`.
-This project's plugin ID is `dock.okuma.dev`. Keep runtime IDs, examples, and
-management commands synchronized with the manifest. The GitHub organization
-and repository URL remain `OKUMARCHY/Dock`.
+This project's plugin ID is `okuma.dev_dock4omarchy`, and the manifest author is `ŌKUMA`.
+Keep runtime IDs, examples, and management commands synchronized with the manifest.
+The canonical repository is `https://github.com/Okumai/Dock`.
+
+Read [docs/publication.md](docs/publication.md) before uploading code or submitting
+to a marketplace. Run all checks locally; this repository has no hosted workflows.
 
 Keep source code, comments, documentation, issue templates, and test fixtures in
 English. Do not commit personal settings, home-directory paths, or private window
@@ -25,6 +27,13 @@ Run the unit tests and `omarchy plugin validate .` before submitting changes.
 - Theme changes update bar, popup and text colors live.
 - Toggle Top Bar hides both bars and releases reservations.
 - Multiple monitors and different scale factors preserve logical geometry.
+- Cycle tiling -> scrolling -> floating -> tiling on the same workspace: this
+  dock only shows in the first two; the built-in dock remains enabled for floating.
+- Floating mode closes open menus, releases focus grabs, cancels drags, and
+  releases this dock's bottom reservation within one polling cycle (750 ms).
+- Mixed modes on multiple monitors are handled independently; fast workspace
+  switches and config reloads never apply stale mode-query results.
+- Failed or missing mode queries leave the dock hidden rather than conflicting.
 - Missing optional applications do not break startup.
 
 Document the exact tested Omarchy, Quickshell and Hyprland versions. Do not

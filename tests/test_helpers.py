@@ -18,7 +18,7 @@ class DiscoveryTests(unittest.TestCase):
     def test_plugin_identity(self):
         manifest = json.loads((ROOT / 'manifest.json').read_text())
         example = json.loads((ROOT / 'examples/plugin-settings.json').read_text())
-        self.assertEqual(manifest['id'], 'dock.okuma.dev')
+        self.assertEqual(manifest['id'], 'okuma.dev_dock4omarchy')
         self.assertEqual(manifest['author'], '\u014cKUMA')
         self.assertEqual(example['id'], manifest['id'])
         self.assertIn('property string pluginId: "' + manifest['id'] + '"', (ROOT / 'Dock.qml').read_text())
